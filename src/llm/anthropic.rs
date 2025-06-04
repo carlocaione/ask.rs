@@ -1,6 +1,5 @@
 use anyhow::{Result, anyhow};
 use owo_colors::OwoColorize;
-use reqwest::Response;
 use serde_json::json;
 
 use super::{PROMPT, Provider};
@@ -24,7 +23,7 @@ impl Provider for Anthropic {
         }
     }
 
-    async fn do_query(&self, query: &str) -> Result<Response> {
+    async fn do_query(&self, query: &str) -> Result<serde_json::Value> {
         let client = reqwest::Client::new();
         let content = format!("{PROMPT} {query}");
 
@@ -43,10 +42,12 @@ impl Provider for Anthropic {
             .header("content-type", "application/json")
             .json(&json)
             .send()
+            .await?
+            .json()
             .await?)
     }
 
-    fn get_answer(&self, json: &serde_json::Value) -> Result<String> {
+    fn get_answer_from(&self, json: &serde_json::Value) -> Result<String> {
         // TODO: fix this
         Ok(json["content"][0]["text"]
             .as_str()
