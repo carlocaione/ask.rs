@@ -27,6 +27,20 @@ fn get_query(query: Option<String>) -> Result<String> {
     Ok(query)
 }
 
+async fn do_query<T: Provider>(query: &str, provider: &T, verbose: bool) -> Result<String> {
+    let json = provider
+        .do_query(query)
+        .await?
+        .json::<serde_json::Value>()
+        .await?;
+
+    if verbose {
+        provider.get_details_from(&json);
+    }
+
+    provider.get_answer(&json)
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let Ok(api_key) = env::var(Anthropic::API_KEY_ENV) else {
@@ -38,13 +52,8 @@ async fn main() -> Result<()> {
     let anthropic = Anthropic::new(&api_key);
 
     let query = get_query(args.query)?;
-    let json: serde_json::Value = anthropic.do_query(&query).await?.json().await?;
+    let answer = do_query(&query, &anthropic, args.verbose).await?;
 
-    if args.verbose {
-        anthropic.get_details_from(&json);
-    }
-
-    let answer = anthropic.get_answer(&json)?;
     clipboard.set_text(&answer)?;
 
     println!();
