@@ -27,6 +27,7 @@ fn get_query(query: Option<String>) -> Result<String> {
     Ok(query)
 }
 
+// TODO: move this into trait
 async fn do_query<T: Provider>(query: &str, provider: &T, verbose: bool) -> Result<String> {
     let json = provider
         .do_query(query)
@@ -48,13 +49,12 @@ async fn main() -> Result<()> {
     };
 
     let args = Args::parse();
-    let mut clipboard = Clipboard::new()?;
     let anthropic = Anthropic::new(&api_key);
 
     let query = get_query(args.query)?;
     let answer = do_query(&query, &anthropic, args.verbose).await?;
 
-    clipboard.set_text(&answer)?;
+    Clipboard::new()?.set_text(&answer)?;
 
     println!();
     println!("`{}` copied into clipboard", answer.bold().green());
