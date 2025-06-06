@@ -1,6 +1,6 @@
-pub mod anthropic;
+use crate::errors::AskError;
 
-use anyhow::Result;
+pub mod anthropic;
 
 pub const PROMPT: &str = "
     You are a CLI command generator. The user will describe what they want to do in a terminal environment.
@@ -20,7 +20,7 @@ pub trait Provider {
     const API_KEY_ENV: &str;
 
     fn new(api_key: &str) -> Self;
-    async fn do_query(&self, query: &str) -> Result<serde_json::Value>;
+    async fn do_query(&self, query: &str) -> Result<serde_json::Value, AskError>;
     fn get_details_from(&self, json: &serde_json::Value);
-    fn get_answer_from(&self, json: &serde_json::Value) -> Result<String>;
+    fn get_answer_from(&self, json: &serde_json::Value) -> Result<String, AskError>;
 }

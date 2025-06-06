@@ -1,6 +1,7 @@
-use anyhow::{Result, anyhow};
 use owo_colors::OwoColorize;
 use serde_json::json;
+
+use crate::errors::AskError;
 
 use super::{PROMPT, Provider};
 
@@ -23,7 +24,7 @@ impl Provider for Anthropic {
         }
     }
 
-    async fn do_query(&self, query: &str) -> Result<serde_json::Value> {
+    async fn do_query(&self, query: &str) -> Result<serde_json::Value, AskError> {
         let client = reqwest::Client::new();
         let content = format!("{PROMPT} {query}");
 
@@ -43,15 +44,15 @@ impl Provider for Anthropic {
             .json(&json)
             .send()
             .await?
+            .error_for_status()?
             .json()
             .await?)
     }
 
-    fn get_answer_from(&self, json: &serde_json::Value) -> Result<String> {
-        // TODO: fix this
+    fn get_answer_from(&self, json: &serde_json::Value) -> Result<String, AskError> {
         Ok(json["content"][0]["text"]
             .as_str()
-            .ok_or(anyhow!("Failed to retrieve content text"))?
+            .ok_or(AskError::AnswerNotFound)?
             .to_string())
     }
 
