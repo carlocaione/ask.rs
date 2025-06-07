@@ -25,7 +25,9 @@ impl Provider for Anthropic {
     }
 
     async fn do_query(&self, query: &str) -> Result<serde_json::Value, AskError> {
-        let client = reqwest::Client::new();
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(60))
+            .build()?;
         let content = format!("{PROMPT} {query}");
 
         let json = json!({
@@ -36,17 +38,34 @@ impl Provider for Anthropic {
             ]
         });
 
-        Ok(client
+        let response = client
             .post(URL)
             .header("x-api-key", &self.api_key)
             .header("anthropic-version", HV_VERSION)
             .header("content-type", "application/json")
             .json(&json)
             .send()
-            .await?
-            .error_for_status()?
-            .json()
-            .await?)
+            .await?;
+
+        let status = response.status();
+        
+        if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            return Err(AskError::RateLimited);
+        }
+        
+        if status == reqwest::StatusCode::REQUEST_TIMEOUT || status == reqwest::StatusCode::GATEWAY_TIMEOUT {
+            return Err(AskError::Timeout);
+        }
+        
+        if !status.is_success() {
+            let error_body = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            return Err(AskError::ApiError {
+                status: status.as_u16(),
+                message: error_body,
+            });
+        }
+
+        response.json().await.map_err(|_| AskError::JsonParsingError)
     }
 
     fn get_answer_from(&self, json: &serde_json::Value) -> Result<String, AskError> {

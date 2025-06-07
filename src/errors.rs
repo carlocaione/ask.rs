@@ -4,6 +4,14 @@ use thiserror::Error;
 pub enum AskError {
     #[error("Failed to retrieve content text from LLM reply")]
     AnswerNotFound,
+    #[error("API returned error: {status} - {message}")]
+    ApiError { status: u16, message: String },
+    #[error("Invalid JSON response from API")]
+    JsonParsingError,
+    #[error("Request timeout - the API took too long to respond")]
+    Timeout,
+    #[error("Rate limit exceeded - please try again later")]
+    RateLimited,
     #[error(transparent)]
     JoinError(#[from] tokio::task::JoinError),
     #[error(transparent)]
