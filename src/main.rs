@@ -94,8 +94,7 @@ async fn run() -> Result<(), AskError> {
     let (shutdown_tx, shutdown_rx) = watch::channel(false);
     let spinner_handle = tokio::spawn(async move { run_spinner(shutdown_rx).await });
 
-    let answer =
-        tokio::spawn(async move { do_query(&query, &anthropic, args.verbose).await }).await??;
+    let answer = do_query(&query, &anthropic, args.verbose).await?;
 
     if shutdown_tx.send(true).is_err() {
         eprintln!("Spinner task was already gone before shutdown signal.");
