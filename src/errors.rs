@@ -6,8 +6,8 @@ pub enum AskError {
     AnswerNotFound,
     #[error("API returned error: {status} - {message}")]
     ApiError { status: u16, message: String },
-    #[error("Invalid JSON response from API")]
-    JsonParsingError,
+    #[error("Invalid JSON response from API: {0}")]
+    JsonParsingError(String),
     #[error("Request timeout - the API took too long to respond")]
     Timeout,
     #[error("Rate limit exceeded - please try again later")]

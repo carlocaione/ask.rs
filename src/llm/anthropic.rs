@@ -48,50 +48,56 @@ impl Provider for Anthropic {
             .await?;
 
         let status = response.status();
-        
+
         if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
             return Err(AskError::RateLimited);
         }
-        
+
         if status == reqwest::StatusCode::REQUEST_TIMEOUT || status == reqwest::StatusCode::GATEWAY_TIMEOUT {
             return Err(AskError::Timeout);
         }
-        
+
         if !status.is_success() {
-            let error_body = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            let error_body = response.text().await.unwrap_or_else(|e| format!("Failed to read error response: {}", e));
             return Err(AskError::ApiError {
                 status: status.as_u16(),
                 message: error_body,
             });
         }
 
-        response.json().await.map_err(|_| AskError::JsonParsingError)
+        response.json().await.map_err(|e| AskError::JsonParsingError(e.to_string()))
     }
 
     fn get_answer_from(&self, json: &serde_json::Value) -> Result<String, AskError> {
-        Ok(json["content"][0]["text"]
-            .as_str()
-            .ok_or(AskError::AnswerNotFound)?
-            .to_string())
+        let content = json.get("content")
+            .and_then(|c| c.as_array())
+            .and_then(|arr| arr.first())
+            .and_then(|item| item.get("text"))
+            .and_then(|text| text.as_str())
+            .ok_or(AskError::AnswerNotFound)?;
+
+        Ok(content.to_string())
     }
 
     fn get_details_from(&self, json: &serde_json::Value) {
         println!();
         println!("{}: {}", "api-key: ".bold(), &self.api_key);
-        println!(
-            "{}: {}",
-            "model: ".bold(),
-            json["model"].as_str().unwrap_or("<unknown>")
-        );
-        println!(
-            "{}: {}",
-            "input tokens: ".bold(),
-            json["usage"]["input_tokens"].as_u64().unwrap_or_default()
-        );
-        println!(
-            "{}: {}",
-            "output tokens: ".bold(),
-            json["usage"]["output_tokens"].as_u64().unwrap_or_default()
-        )
+
+        let model = json.get("model")
+            .and_then(|m| m.as_str())
+            .unwrap_or("<model not found>");
+        println!("{}: {}", "model: ".bold(), model);
+
+        let input_tokens = json.get("usage")
+            .and_then(|u| u.get("input_tokens"))
+            .and_then(|t| t.as_u64())
+            .unwrap_or(0);
+        println!("{}: {}", "input tokens: ".bold(), input_tokens);
+
+        let output_tokens = json.get("usage")
+            .and_then(|u| u.get("output_tokens"))
+            .and_then(|t| t.as_u64())
+            .unwrap_or(0);
+        println!("{}: {}", "output tokens: ".bold(), output_tokens);
     }
 }
