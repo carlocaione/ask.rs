@@ -8,7 +8,7 @@ use indicatif::ProgressBar;
 use inquire::{Text, validator::ValueRequiredValidator};
 use llm::{Provider, anthropic::Anthropic};
 use owo_colors::OwoColorize;
-use std::{env, time::Duration};
+use std::{env, process::ExitCode, time::Duration};
 use tokio::{sync::watch, time::sleep};
 
 #[derive(Parser)]
@@ -47,7 +47,7 @@ async fn do_query<T: Provider>(
 async fn run_spinner(mut shutdown_rx: watch::Receiver<bool>) {
     let pb = ProgressBar::new_spinner();
     pb.enable_steady_tick(Duration::from_millis(120));
-    pb.set_message("Thinking...");
+    pb.set_message(" Thinking...");
 
     loop {
         tokio::select! {
@@ -72,7 +72,17 @@ async fn run_spinner(mut shutdown_rx: watch::Receiver<bool>) {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), AskError> {
+async fn main() -> ExitCode {
+    match run().await {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("{} {}", "Error: ".red().bold(), e);
+            ExitCode::FAILURE
+        }
+    }
+}
+
+async fn run() -> Result<(), AskError> {
     let Ok(api_key) = env::var(Anthropic::API_KEY_ENV) else {
         return Err(AskError::KeyMissing(Anthropic::API_KEY_ENV.to_string()));
     };
