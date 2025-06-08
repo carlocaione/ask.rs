@@ -5,8 +5,8 @@ use arboard::Clipboard;
 use clap::Parser;
 use errors::AskError;
 use indicatif::ProgressBar;
-use inquire::{Text, validator::ValueRequiredValidator};
-use llm::{Provider, anthropic::Anthropic};
+use inquire::{validator::ValueRequiredValidator, Text};
+use llm::{anthropic::Anthropic, Provider};
 use owo_colors::OwoColorize;
 use std::{env, process::ExitCode, time::Duration};
 use tokio::{sync::watch, time::sleep};
@@ -16,8 +16,13 @@ use tokio::{sync::watch, time::sleep};
 struct Args {
     query: Option<String>,
 
+    /// Verbose mode
     #[arg(short, long)]
     verbose: bool,
+
+    /// Skip saving into clipboard
+    #[arg(short, long)]
+    skip_clipboard: bool,
 }
 
 fn get_query(query: Option<String>) -> Result<String, AskError> {
@@ -104,10 +109,15 @@ async fn run() -> Result<(), AskError> {
         eprintln!("Spinner task panicked: {:?}", e);
     }
 
-    Clipboard::new()?.set_text(&answer)?;
+    let msg = if !args.skip_clipboard {
+        Clipboard::new()?.set_text(&answer)?;
+        "copied into clipboard"
+    } else {
+        ""
+    };
 
     println!();
-    println!("`{}` copied into clipboard", answer.bold().green());
+    println!("   {} {}", answer.bold().green(), msg.dimmed());
 
     Ok(())
 }
