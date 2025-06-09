@@ -76,17 +76,6 @@ async fn run_spinner(mut shutdown_rx: watch::Receiver<bool>) {
     }
 }
 
-#[tokio::main]
-async fn main() -> ExitCode {
-    match run().await {
-        Ok(()) => ExitCode::SUCCESS,
-        Err(e) => {
-            eprintln!("{} {}", "Error: ".red().bold(), e);
-            ExitCode::FAILURE
-        }
-    }
-}
-
 async fn run() -> Result<(), AskError> {
     let Ok(api_key) = env::var(Anthropic::API_KEY_ENV) else {
         return Err(AskError::KeyMissing(Anthropic::API_KEY_ENV.to_string()));
@@ -120,4 +109,15 @@ async fn run() -> Result<(), AskError> {
     println!("   {} {}", answer.bold().green(), msg.dimmed());
 
     Ok(())
+}
+
+#[tokio::main]
+async fn main() -> ExitCode {
+    match run().await {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("{} {}", "Error: ".red().bold(), e);
+            ExitCode::FAILURE
+        }
+    }
 }

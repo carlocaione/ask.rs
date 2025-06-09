@@ -8,7 +8,7 @@ use super::{PROMPT, Provider};
 const URL: &str = "https://api.anthropic.com/v1/messages";
 
 const HV_VERSION: &str = "2023-06-01";
-const DATA_MODEL: &str = "claude-opus-4-20250514";
+const DATA_MODEL: &str = "claude-3-5-sonnet-20241022";
 const DATA_MAX_TOKENS: u32 = 1024;
 
 pub struct Anthropic {
