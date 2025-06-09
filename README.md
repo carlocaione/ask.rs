@@ -9,7 +9,7 @@ A simple Rust CLI tool that converts natural language descriptions into terminal
 ## Features
 
 - 🤖 Natural language to terminal command conversion
-- 📋 Automatic clipboard copying of results
+- 📋 Automatic clipboard copying of results (can be disabled)
 - ⚡ Fast async execution with progress spinner
 - 🔧 Verbose mode for API usage details
 - 🎯 Designed for Linux and macOS environments
@@ -48,6 +48,13 @@ ask
 ### Verbose mode
 ```bash
 ask --verbose "find all python files"
+```
+
+### Skip clipboard
+```bash
+ask --skip-clipboard "list files"
+# or
+ask -s "list files"
 ```
 
 ## Examples
@@ -115,7 +122,7 @@ export ASK_ANTHROPIC_API_KEY="your-api-key-here"
 - **inquire** - Interactive prompts
 - **owo-colors** - Terminal colors
 - **serde_json** - JSON handling
-- **anyhow** - Error handling
+- **thiserror** - Error handling
 
 ## License
 
