@@ -98,11 +98,22 @@ async fn run() -> Result<(), AskError> {
         eprintln!("Spinner task panicked: {:?}", e);
     }
 
-    let msg = if !args.skip_clipboard {
-        Clipboard::new()?.set_text(&answer)?;
-        "copied into clipboard"
-    } else {
+    let msg = if args.skip_clipboard {
         ""
+    } else {
+        match Clipboard::new() {
+            Ok(mut clipboard) => {
+                clipboard.set_text(&answer)?;
+                "copied into clipboard"
+            }
+            Err(err) => {
+                eprintln!(
+                    "{}",
+                    format!("   {}: {} ({})", "W".red(), "Clipboard not supported", err).dimmed()
+                );
+                ""
+            }
+        }
     };
 
     println!();
